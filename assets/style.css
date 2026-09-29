@@ -1,0 +1,816 @@
+/* 台湾旅行のしおり
+   レイアウトの考え方: 1カラム。台北MRTの路線図を下敷きにして、
+   旅程の各日を「路線」(路線色)、訪問先を「駅」(丸いノード)として縦に並べる。
+   チェックリストは指で押しやすい大きな行にする。 */
+
+:root {
+  --bg: #f2f5f9;
+  --surface: #ffffff;
+  --surface-2: #e8edf4;
+  --fg: #142033;
+  --muted: #56667b;
+  --hair: #d5deea;
+  --link: #0b5fb0;
+  --focus: #0b6bc4;
+  --tbd-bg: #fff1bf;
+  --tbd-fg: #5b4200;
+
+  /* 路線色(台北MRTの路線カラーがモチーフ)。ページの色やDayの色に使う */
+  --r: #d3273b;  --on-r: #ffffff;
+  --bl: #0b6bc4; --on-bl: #ffffff;
+  --g: #0a7d55;  --on-g: #ffffff;
+  --p: #8146b8;  --on-p: #ffffff;
+  --br: #9a6a2c; --on-br: #ffffff;
+
+  /* いま使っている路線色。.line-* を付けた要素の中で切り替わる */
+  --line: var(--fg);
+  --on-line: var(--bg);
+
+  --font-body: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", Meiryo, system-ui, sans-serif;
+  --font-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1621;
+    --surface: #162131;
+    --surface-2: #1f2d40;
+    --fg: #e6edf6;
+    --muted: #9db0c6;
+    --hair: #2a3a4f;
+    --link: #7cc0ff;
+    --focus: #7cc0ff;
+    --tbd-bg: #4a3b0c;
+    --tbd-fg: #ffe08a;
+    --r: #ff6f81;  --on-r: #1a0409;
+    --bl: #5db0ff; --on-bl: #06172a;
+    --g: #3fcb95;  --on-g: #032116;
+    --p: #bf95ff;  --on-p: #1a0b2e;
+    --br: #d9a45f; --on-br: #231502;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0e1621;
+  --surface: #162131;
+  --surface-2: #1f2d40;
+  --fg: #e6edf6;
+  --muted: #9db0c6;
+  --hair: #2a3a4f;
+  --link: #7cc0ff;
+  --focus: #7cc0ff;
+  --tbd-bg: #4a3b0c;
+  --tbd-fg: #ffe08a;
+  --r: #ff6f81;  --on-r: #1a0409;
+  --bl: #5db0ff; --on-bl: #06172a;
+  --g: #3fcb95;  --on-g: #032116;
+  --p: #bf95ff;  --on-p: #1a0b2e;
+  --br: #d9a45f; --on-br: #231502;
+  color-scheme: dark;
+}
+
+.line-r  { --line: var(--r);  --on-line: var(--on-r); }
+.line-bl { --line: var(--bl); --on-line: var(--on-bl); }
+.line-g  { --line: var(--g);  --on-line: var(--on-g); }
+.line-p  { --line: var(--p);  --on-line: var(--on-p); }
+.line-br { --line: var(--br); --on-line: var(--on-br); }
+
+/* ---------- 基本 ---------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 1rem/1.75 var(--font-body);
+  word-break: auto-phrase;
+  overflow-wrap: anywhere;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+}
+
+a {
+  color: var(--link);
+  text-underline-offset: 0.18em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- ヘッダーとタブ ---------- */
+
+.site-header {
+  padding-top: 0.5rem;
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 44rem);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-block: 0.6rem;
+  color: var(--fg);
+  font: 700 1.05rem/1.3 var(--font-display);
+  text-decoration: none;
+}
+
+/* 路線図のマーク(3つの駅を線でつないだもの) */
+.brand::before {
+  content: "";
+  width: 1.7rem;
+  height: 0.9rem;
+  background:
+    radial-gradient(circle at 0.25rem 50%, var(--r) 0 0.24rem, transparent 0.26rem),
+    radial-gradient(circle at 50% 50%, var(--bl) 0 0.24rem, transparent 0.26rem),
+    radial-gradient(circle at calc(100% - 0.25rem) 50%, var(--g) 0 0.24rem, transparent 0.26rem),
+    linear-gradient(var(--muted), var(--muted)) center / 100% 2px no-repeat;
+}
+
+/* スマホでは画面下のタブ。片手で押しやすい位置に置く */
+.tabs {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--surface);
+  border-top: 1px solid var(--hair);
+}
+
+.tabs a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: -1px;
+  padding: 0.6rem 0.25rem 0.65rem;
+  border-top: 3px solid transparent;
+  color: var(--muted);
+  font: 700 0.8125rem/1.2 var(--font-body);
+  text-decoration: none;
+}
+
+.tabs a::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px var(--line);
+}
+
+.tabs a[aria-current="page"] {
+  border-top-color: var(--line);
+  color: var(--fg);
+}
+
+.tabs a[aria-current="page"]::before {
+  background: var(--line);
+}
+
+@media (min-width: 48rem) {
+  .tabs {
+    position: static;
+    display: flex;
+    gap: 0.25rem;
+    padding-bottom: 0;
+    background: none;
+    border-top: 0;
+  }
+
+  .tabs a {
+    flex-direction: row;
+    gap: 0.5rem;
+    margin-top: 0;
+    padding: 0.55rem 0.8rem;
+    border-top: 0;
+    border-bottom: 3px solid transparent;
+    font-size: 0.95rem;
+  }
+
+  .tabs a[aria-current="page"] {
+    border-bottom-color: var(--line);
+  }
+}
+
+/* ---------- ページ共通 ---------- */
+
+.page {
+  width: min(100%, 44rem);
+  margin-inline: auto;
+  padding: 1rem 1rem calc(6rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 48rem) {
+  .page {
+    padding-bottom: 3rem;
+  }
+}
+
+.hero {
+  padding-block: 1.25rem 0.5rem;
+}
+
+.hero h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+  line-height: 1.25;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.5rem;
+  font-size: 1.6rem;
+  line-height: 1.3;
+}
+
+.lead {
+  margin: 0 0 1rem;
+  color: var(--muted);
+}
+
+.badge {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--badge, 2.5rem);
+  height: var(--badge, 2.5rem);
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--on-line);
+  font: 700 1.1rem/1 var(--font-display);
+}
+
+.notice {
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  font-size: 0.9rem;
+}
+
+/* まだ決まっていない所の目印。検索して埋めていく */
+.tbd {
+  display: inline-block;
+  padding: 0 0.5em;
+  border-radius: 0.35rem;
+  background: var(--tbd-bg);
+  color: var(--tbd-fg);
+  font-size: 0.9em;
+  font-weight: 700;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.card {
+  margin-block: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.info {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 0.6rem 1rem;
+  margin: 0;
+}
+
+.info dt {
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.info dd {
+  margin: 0;
+}
+
+.info .num {
+  font: 700 1.1rem/1.5 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.info .sub {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.page-foot {
+  margin-top: 2rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.btn {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font: 700 0.875rem/1 var(--font-body);
+  cursor: pointer;
+}
+
+.btn[data-armed] {
+  border-color: transparent;
+  background: var(--tbd-bg);
+  color: var(--tbd-fg);
+}
+
+/* ---------- ホーム: 路線図のような目次 ---------- */
+
+.route {
+  --badge: 2.75rem;
+  overflow: hidden;
+  margin: 1.25rem 0;
+  padding: 0;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  background: var(--surface);
+  list-style: none;
+}
+
+.route li {
+  position: relative;
+}
+
+.route a {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.route a::after {
+  content: "›";
+  align-self: center;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.route a:hover,
+.route a:active {
+  background: var(--surface-2);
+}
+
+/* 駅と駅をつなぐ線 */
+.route li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: calc(1rem + var(--badge));
+  left: calc(1rem + var(--badge) / 2 - 2px);
+  width: 4px;
+  height: calc(100% - var(--badge));
+  background: var(--hair);
+}
+
+.route__text {
+  display: grid;
+  min-width: 0;
+}
+
+.route__title {
+  font: 700 1.05rem/1.5 var(--font-display);
+}
+
+.route__desc {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* ---------- チェックリスト ---------- */
+
+.progress {
+  margin: 1rem 0 0.5rem;
+}
+
+.progress__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.progress__num {
+  color: var(--fg);
+  font: 700 1.1rem/1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: 100%;
+  height: 0.6rem;
+  margin-top: 0.4rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--line);
+}
+
+.bar::-webkit-progress-bar {
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.bar::-webkit-progress-value {
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.bar::-moz-progress-bar {
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.group {
+  margin-block: 1.5rem;
+}
+
+.group__title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.count {
+  color: var(--muted);
+  font: 700 0.9rem/1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.group[data-done] .count {
+  color: var(--line);
+}
+
+.group[data-done] .count::before {
+  content: "✓ ";
+}
+
+.checklist {
+  margin: 0;
+  padding: 0 1rem;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  background: var(--surface);
+  list-style: none;
+}
+
+.checklist li + li {
+  border-top: 1px solid var(--hair);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding-block: 0.85rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.check input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  display: grid;
+  place-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0.15rem 0 0;
+  border: 2px solid var(--muted);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.check input::after {
+  content: "";
+  width: 0.8rem;
+  height: 0.45rem;
+  margin-top: -0.1rem;
+  border-bottom: 3px solid var(--on-line);
+  border-left: 3px solid var(--on-line);
+  transform: rotate(-45deg) scale(0);
+  transition: transform 0.12s ease;
+}
+
+.check input:checked {
+  border-color: var(--line);
+  background: var(--line);
+}
+
+.check input:checked::after {
+  transform: rotate(-45deg) scale(1);
+}
+
+.check__body {
+  display: grid;
+  min-width: 0;
+}
+
+.check__title {
+  font-weight: 600;
+}
+
+.check__note {
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.check input:checked ~ .check__body .check__title {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.reset-row {
+  margin-top: 2rem;
+}
+
+.refs {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.refs li + li {
+  margin-top: 0.4rem;
+}
+
+/* ---------- 旅程 ---------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.chips a::before {
+  content: "";
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--line);
+}
+
+.day {
+  --time-w: 3.1rem;
+  --rail-w: 1.7rem;
+  --node: 1.1rem;
+  margin-block: 1.25rem;
+  padding: 1rem 1rem 0.25rem;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  background: var(--surface);
+  scroll-margin-top: 1rem;
+}
+
+.day__head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+
+.day__head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+
+.day__date {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.stops {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stop {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--time-w) var(--rail-w) minmax(0, 1fr);
+  padding-bottom: 1.25rem;
+}
+
+.stop:last-child {
+  padding-bottom: 0.75rem;
+}
+
+/* 路線(次の駅まで) */
+.stop::before {
+  content: "";
+  position: absolute;
+  top: 0.8rem;
+  bottom: -0.8rem;
+  left: calc(var(--time-w) + var(--rail-w) / 2 - 2px);
+  width: 4px;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.stop:last-child::before {
+  display: none;
+}
+
+/* 駅 */
+.stop::after {
+  content: "";
+  position: absolute;
+  top: 0.25rem;
+  left: calc(var(--time-w) + var(--rail-w) / 2 - var(--node) / 2);
+  width: var(--node);
+  height: var(--node);
+  border: 4px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.stop__time {
+  font: 700 0.95rem/1.7 var(--font-display);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stop__body {
+  grid-column: 3;
+  min-width: 0;
+}
+
+.stop__title {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.stop__note,
+.stop__move {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.stop__move {
+  margin-top: 0.45rem;
+}
+
+.stop__move::before {
+  content: "次へ ";
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.tag {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0 0.5em;
+  border-radius: 0.35rem;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.6;
+  vertical-align: 0.1em;
+}
+
+.map {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0 0.55em;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.6;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.map::after {
+  content: " ↗";
+}
+
+.extra {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 0.85rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.extra dt {
+  font-weight: 700;
+}
+
+.extra dd {
+  margin: 0;
+}
+
+.extra__list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 1.6;
+}
+
+.extra__note {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* ---------- 動きを減らす設定 / 印刷 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .check input::after { transition: none; }
+}
+
+@media print {
+  :root {
+    --bg: #fff !important;
+    --surface: #fff !important;
+    --surface-2: #f0f0f0 !important;
+    --fg: #000 !important;
+    --muted: #333 !important;
+    --hair: #bbb !important;
+    --link: #000 !important;
+  }
+
+  .tabs,
+  .progress,
+  .chips,
+  .reset-row { display: none !important; }
+
+  .page { padding-bottom: 0; }
+  .day, .group, .card { break-inside: avoid; }
+}
